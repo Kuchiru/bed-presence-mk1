@@ -3,9 +3,9 @@ packages:
 
 esphome:
   project:
-    version: nightly
+    version: dev # This will be replace by the github workflows with the `dev` version
 
 update:
   - id: !extend update_http_request
-    source: https://github.com/ElevatedSensors/bed-presence-mk1/releases/download/nightly/bed-presence-mk1.manifest.json
+    source: https://elevatedsensors.github.io/bed-presence-mk1/bed-presence-mk1.manifest.json
     update_interval: 60s
