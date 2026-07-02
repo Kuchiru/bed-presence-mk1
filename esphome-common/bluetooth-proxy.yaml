@@ -1,15 +1,3 @@
-api:
-  on_client_connected:
-    - esp32_ble_tracker.start_scan:
-        continuous: true
-  on_client_disconnected:
-    if:
-      condition:
-        not:
-          api.connected:
-      then:
-        - esp32_ble_tracker.stop_scan:
-
 bluetooth_proxy:
   id: bt_proxy
   active: true
@@ -20,22 +8,68 @@ esp32_ble_tracker:
     active: false
     continuous: false
 
+globals:
+  - id: bt_scanning_enabled
+    type: bool
+    restore_value: true
+    initial_value: 'true'
+
+api:
+  on_client_connected:
+    - if:
+        condition:
+          lambda: 'return id(bt_scanning_enabled);'
+        then:
+          - esp32_ble_tracker.start_scan:
+              continuous: true
+  on_client_disconnected:
+    if:
+      condition:
+        not:
+          api.connected:
+      then:
+        - esp32_ble_tracker.stop_scan:
+
 select:
   - platform: template
-    name: Bluetooth Scanner Mode
+    name: "Bluetooth Scanner Mode"
     id: scanner_mode
-    entity_category: config
     icon: mdi:bluetooth
+    # Passive/Active control BLE scan type (see ESP32 BLE Tracker docs for tradeoffs).
+    # Disabled stops scanning entirely without touching the BLE radio or GATT proxy,
+    # so existing Home Assistant BLE connections through this device are unaffected.
     options:
       - "Passive"
       - "Active"
+      - "Disabled"
     lambda: |-
-      if (id(ble_tracker).get_scan_active()) {
+      if (!id(bt_scanning_enabled)) {
+        return {"Disabled"};
+      } else if (id(ble_tracker).get_scan_active()) {
         return {"Active"};
       } else {
         return {"Passive"};
       }
     set_action:
-      - lambda: |-
-          id(bt_proxy).bluetooth_scanner_set_mode(x == "Active");
+      - if:
+          condition:
+            lambda: 'return x == "Disabled";'
+          then:
+            - globals.set:
+                id: bt_scanning_enabled
+                value: 'false'
+            - esp32_ble_tracker.stop_scan:
+          else:
+            - globals.set:
+                id: bt_scanning_enabled
+                value: 'true'
+            - lambda: |-
+                id(bt_proxy).bluetooth_scanner_set_mode(x == "Active");
+            - if:
+                condition:
+                  api.connected:
+                then:
+                  - esp32_ble_tracker.start_scan:
+                      continuous: true
       - component.update: scanner_mode
+    entity_category: config
