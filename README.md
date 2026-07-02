@@ -1,6 +1,2 @@
-# sensor-configs
-ESPHome configs for Elevated Sensors.
-
-| Device | Config | Purchase |
-|--------|--------|----------|
-|Bed Presence Mk1 | [bed-presence-mk1.yaml](https://github.com/ElevatedSensors/sensor-configs/blob/main/bed-presence-mk1.yaml)| [ES Store 🛒](https://www.elevatedsensors.com/store/p/bed-presence-for-esphome) |
+# Difference from the main config so far:
+- Added a 'Disabled' option for Bluetooth scanning mode, this will disable scanning only; does not disable bluetooth!
